@@ -1,15 +1,16 @@
 {
   "name": "abyss-voting",
+  "main": "src/index.js",
   "version": "1.0.0",
   "dependencies": {
-    "discord-akairo": "^8.1.0",
-    "discord.js": "^12.5.3"
+    "@sapphire/framework": "^2.3.0-pr-293.5e9c362.0",
+    "discord.js": "^13.6.0"
   },
   "devDependencies": {
-    "typescript": "^4.6.2",
-    "@types/node": "^17.0.21"
+    "@types/node": "^17.0.21",
+    "typescript": "^4.6.2"
   },
   "scripts": {
-    "run": "npx tsc && cd target && node Main.js"
+    "start": "npx tsc && cd src && node index.js"
   }
 }
