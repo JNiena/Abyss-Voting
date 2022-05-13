@@ -1,6 +1,6 @@
 export = {
-    "token": "OTEyNTgwOTIxMDI5NDQ3NzQw.YZyBNg.ZfilM5HnbExnZuDk3jokquUJ-XA",
-    "prefix": "!",
+    "token": "",
+    "prefix": "",
     "commands": {
         "create-vote": {
             "permissions": [],
