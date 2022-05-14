@@ -3,8 +3,8 @@ import { CommandInteraction, MessageEmbed } from 'discord.js';
 import { SlashCommandBuilder } from '@discordjs/builders';
 import { ChannelType } from 'discord-api-types';
 
-
 export class CreateVoteCommand extends Command {
+
   public constructor(context: Command.Context, options: Command.Options) {
     super(context, {
       ...options,
@@ -81,4 +81,5 @@ export class CreateVoteCommand extends Command {
 
     return interaction.channel?.send({embeds: [voteEmbed]});
 	}
+
 }
