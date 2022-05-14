@@ -1,0 +1,14 @@
+{
+  "token": "",
+  "prefix": "",
+  "commands": {
+    "create-vote": {
+      "permissions": [],
+      "usage": []
+    },
+    "close-vote": {
+      "permissions": [],
+      "usage": []
+    }
+  }
+}
