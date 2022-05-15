@@ -1,7 +1,8 @@
 import {ApplicationCommandRegistry, Command, RegisterBehavior} from "@sapphire/framework";
 import {CommandInteraction, MessageEmbed} from "discord.js";
 import {SlashCommandBuilder} from "@discordjs/builders";
-import {ChannelType} from "discord-api-types";
+import {ChannelType} from "discord-api-types/v10";
+
 
 export class CreateVoteCommand extends Command {
 
@@ -27,14 +28,13 @@ export class CreateVoteCommand extends Command {
 					.setRequired(true))
 			.addChannelOption(option =>
 				option.setName("channel")
-					.addChannelType(ChannelType.GuildText)
+					.addChannelTypes(ChannelType.GuildText)
 					.setDescription("the channel to send the poll in")
 					.setRequired(false))
 			.addStringOption(option =>
 				option.setName("emoji-mode")
 					.setDescription("the category of emojis used in the poll")
-					.addChoice("Numbers", "Numbers")
-					.addChoice("Random Emojis", "Random Emojis")
+					.addChoices({name: "Numbers", value: "Numbers"}, {name: "Random Emojis", value: "Random Emojis"})
 					.setRequired(false))
 			.addBooleanOption(option =>
 				option.setName("show-chart")
