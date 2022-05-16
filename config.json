@@ -1,0 +1,10 @@
+{
+  "token": "Insert Token Here!",
+  "prefix": "",
+  "commands": {
+    "create-vote": {
+      "permissions": [],
+      "usage": []
+    }
+  }
+}
