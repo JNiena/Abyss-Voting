@@ -11,6 +11,6 @@
     "typescript": "^4.6.4"
   },
   "scripts": {
-    "run": "npx tsc && cd target && node Main.js"
+    "start": "npx tsc && cd target && node Main.js"
   }
 }

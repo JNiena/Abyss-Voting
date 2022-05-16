@@ -1,7 +1,9 @@
-import {ApplicationCommandRegistry, Command, RegisterBehavior} from "@sapphire/framework";
-import {CommandInteraction, MessageEmbed} from "discord.js";
-import {SlashCommandBuilder} from "@discordjs/builders";
-import {ChannelType} from "discord-api-types/v10";
+import { ApplicationCommandRegistry, Command, RegisterBehavior } from "@sapphire/framework";
+import { CommandInteraction, Guild, GuildChannel, MessageEmbed, TextBasedChannel, TextChannel } from "discord.js";
+import { SlashCommandBuilder } from "@discordjs/builders";
+import { ChannelType } from "discord-api-types/v10";
+
+import { EmojiSelector } from "../cmdutils/EmojiSelector";
 
 
 export class CreateVoteCommand extends Command {
@@ -34,7 +36,7 @@ export class CreateVoteCommand extends Command {
 			.addStringOption(option =>
 				option.setName("emoji-mode")
 					.setDescription("the category of emojis used in the poll")
-					.addChoices({name: "Numbers", value: "Numbers"}, {name: "Random Emojis", value: "Random Emojis"})
+					.addChoices({name: "Numbers", value: "Numbers"}, {name: "Random Emojis", value: "Random Emojis"}, {name: "Custom Emojis", value: "Custom Emojis"})
 					.setRequired(false))
 			.addBooleanOption(option =>
 				option.setName("show-chart")
@@ -56,30 +58,43 @@ export class CreateVoteCommand extends Command {
 	}
 
 	public async chatInputRun(interaction: CommandInteraction) {
-
-		const title = interaction.options.getString("title");
-		const answers = interaction.options.getString("answers");
-		const channel = interaction.options.getChannel("channel");
+		const title = interaction.options.getString("title")!;
+		const answers = interaction.options.getString("answers")!;
+		let channel = interaction.options.getChannel("channel") as TextBasedChannel | null;
 		const emojiMode = interaction.options.getString("emoji-mode");
 		const showChart = interaction.options.getBoolean("show-chart");
 		const duration = interaction.options.getString("duration");
 		const maxChanges = interaction.options.getNumber("max-changes");
 		const maxVotes = interaction.options.getNumber("max-votes");
 
-		await interaction.reply({content: "Vote created successfully!", ephemeral: true});
+		const answerList = answers.split("|");
 
-		const voteEmbed = new MessageEmbed()
+		if (answerList.length <= 1) {
+			await interaction.reply({content: "You need more than 1 option!", ephemeral: true});
+			return;
+		}
+		else if (answerList.length > 24) {
+			await interaction.reply({content: "You have too many options!", ephemeral: true});
+			return;
+		}
+
+		if (!channel && interaction.channel) {
+			channel = interaction.channel;
+		}
+
+		await interaction.deferReply({ephemeral: true});
+
+		let voteEmbed = new MessageEmbed()
 			.setColor("#0099ff")
-			.setTitle("someTitle")
-			.setDescription("some description")
-			.addFields(
-				{name: "Regular field title", value: "Some value here"},
-				{name: "Total Votes", value: "69", inline: true}
-			)
-			.setTimestamp()
-			.setFooter({text: "Some footer text here"});
+			.setTitle(title)
+			.addField("Total Votes", "1")
+			.setTimestamp();
 
-		return interaction.channel?.send({embeds: [voteEmbed]});
+		voteEmbed = EmojiSelector.addEmojisToVote(interaction, voteEmbed, answerList, emojiMode);
+
+		await interaction.editReply({content: "Vote created successfully!"});
+
+		return channel?.send({embeds: [voteEmbed]});
 	}
 
 }
