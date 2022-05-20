@@ -10,10 +10,15 @@ export default class VoteButtonHandler extends InteractionHandler {
 	}
 
 	public async run(interaction: ButtonInteraction) {
-		await interaction.reply({
-			content: `You already voted on this poll!`,
-			ephemeral: true
-		});
+		try {
+			VoteExecutor.registerVote(interaction);
+		}
+		catch (e) {
+			if (e instanceof Error) {
+				interaction.editReply({content: e.message});
+				return;
+			}
+		}
 	}
 
 	public async parse(interaction: ButtonInteraction) {

@@ -2,12 +2,14 @@ import { ApplicationCommandRegistry, Command, RegisterBehavior } from "@sapphire
 import { CommandInteraction, MessageActionRow, MessageActionRowComponent, MessageActionRowComponentResolvable, MessageEmbed, TextBasedChannel, TextChannel } from "discord.js";
 import { SlashCommandBuilder } from "@discordjs/builders";
 import { APIActionRowComponent, APIMessageActionRowComponent, ChannelType } from "discord-api-types/v10";
+import uniqid from 'uniqid';
 
 import EmojiSelector from "../cmdutils/EmojiSelector";
-import votesSettings from "../cmdutils/VotesCmdSettings";
 import DurationSerializer from "../cmdutils/DurationSerializer";
 import VoteExpirationExecutor from "../cmdutils/VoteExpirationExecutor";
 import moment from "moment";
+import { Poll, VoteCmdSettings } from "../cmdutils/Poll";
+import { VoteDBUtils } from "../cmdutils/VoteDBUtils";
 
 export default class CreateVoteCommand extends Command {
 
@@ -72,6 +74,8 @@ export default class CreateVoteCommand extends Command {
 		const maxChanges = interaction.options.getNumber("max-changes");
 		const maxVotes = interaction.options.getNumber("max-votes");
 
+		const pollId = uniqid();
+
 		const answerList = answers.split("|");
 
 		await interaction.deferReply({ephemeral: true});
@@ -90,7 +94,7 @@ export default class CreateVoteCommand extends Command {
 
 			let components: MessageActionRow<MessageActionRowComponent, MessageActionRowComponentResolvable, APIActionRowComponent<APIMessageActionRowComponent>>[] = [];
 
-			({voteEmbed, components} = EmojiSelector.addEmojisToVote(voteEmbed, answerList, emojiMode));
+			({voteEmbed, components} = EmojiSelector.addEmojisToVote(voteEmbed, answerList, emojiMode, pollId));
 
 			if (duration) {
 				voteDuration = DurationSerializer.getParsedDuration(duration);
@@ -108,17 +112,30 @@ export default class CreateVoteCommand extends Command {
 
 			await interaction.editReply({content: "Vote created successfully!"});
 			
-			return channel?.send({embeds: [voteEmbed], components: components}).then(message => {
-				votesSettings.set(message.id, {
+			return channel?.send({embeds: [voteEmbed], components: components}).then(async message => {
+				const voteCmdSettings: VoteCmdSettings = {
 					title: title,
-					answers: answerList,
+					options: answerList,
 					channel: channel,
+					duration: duration,
 					emojiMode: emojiMode,
 					showChart: showChart,
-					duration: duration,
 					maxChanges: maxChanges,
 					maxVotes: maxVotes
-				});
+				}
+
+				const pollData: Poll = {
+					name: title,
+					id: pollId,
+					userID: interaction.user.id,
+					settings: voteCmdSettings,
+					createdAt: moment().toDate().toUTCString(),
+					messageID: message.id,
+					options: answerList,
+					votes: []
+				}
+
+				const insertResult = await VoteDBUtils.insertOne(pollData);
 			});
 		}
 		catch (e) {

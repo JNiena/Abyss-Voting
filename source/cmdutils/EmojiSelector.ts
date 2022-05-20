@@ -42,7 +42,7 @@ export default class EmojiSelector {
     ];
 
 
-    public static addEmojisToVote(voteEmbed: MessageEmbed, answers: string[], emojiMode: string | null) {        
+    public static addEmojisToVote(voteEmbed: MessageEmbed, answers: string[], emojiMode: string | null, pollID: string) {        
         let components: MessageActionRow<MessageActionRowComponent, MessageActionRowComponentResolvable, APIActionRowComponent<APIMessageActionRowComponent>>[] = [];
         
         if (answers.length <= 1) {
@@ -52,23 +52,23 @@ export default class EmojiSelector {
 			throw new Error("You have too many options!");
 		}
 
-        if (!emojiMode) ({voteEmbed, components} = this.setDefaultEmojisToVote(voteEmbed, answers, EmojiSelector.numericalEmojis));
+        if (!emojiMode) ({voteEmbed, components} = this.setDefaultEmojisToVote(voteEmbed, answers, EmojiSelector.numericalEmojis, pollID));
 
         if (emojiMode == "Numbers") {
-            ({voteEmbed, components} = this.setDefaultEmojisToVote(voteEmbed, answers, EmojiSelector.numericalEmojis));
+            ({voteEmbed, components} = this.setDefaultEmojisToVote(voteEmbed, answers, EmojiSelector.numericalEmojis, pollID));
         }
         else if (emojiMode == "Random Emojis") {
-            ({voteEmbed, components} = this.setDefaultEmojisToVote(voteEmbed, answers, EmojiSelector.fallbackEmojis));
+            ({voteEmbed, components} = this.setDefaultEmojisToVote(voteEmbed, answers, EmojiSelector.fallbackEmojis, pollID));
         }
         else if (emojiMode == "Custom Emojis") {
-            ({voteEmbed, components} = this.setCustomEmojisToVote(voteEmbed, answers));
+            ({voteEmbed, components} = this.setCustomEmojisToVote(voteEmbed, answers, pollID));
         }
         
         return {voteEmbed, components};
     }
 
 
-    private static setDefaultEmojisToVote(voteEmbed: MessageEmbed, answers: string[], emojiNames: string[]) {
+    private static setDefaultEmojisToVote(voteEmbed: MessageEmbed, answers: string[], emojiNames: string[], pollID: string) {
         const optionCount = answers.length;
         let emojiList = optionCount <= 9 ? EmojiSelector.numericalEmojis : EmojiSelector.fallbackEmojis;
 
@@ -76,10 +76,10 @@ export default class EmojiSelector {
             emojiList = EmojiSelector.fallbackEmojis;
         }
         
-        return this.setEmojisFromListToVote(voteEmbed, emojiList, answers);
+        return this.setEmojisFromListToVote(voteEmbed, emojiList, answers, pollID);
     }
 
-    private static setCustomEmojisToVote(voteEmbed: MessageEmbed, answers: string[]) {
+    private static setCustomEmojisToVote(voteEmbed: MessageEmbed, answers: string[], pollID: string) {
         const { client } = container;
 
         const optionCount = answers.length;
@@ -89,7 +89,7 @@ export default class EmojiSelector {
         if (numCustomEmojis >= optionCount) {
             const emojiList = customEmojisList.random(numCustomEmojis);
 
-            return this.setEmojisFromListToVote(voteEmbed, emojiList, answers);
+            return this.setEmojisFromListToVote(voteEmbed, emojiList, answers, pollID);
         }
         else {
             const numFillerEmojis = optionCount - numCustomEmojis;
@@ -97,11 +97,11 @@ export default class EmojiSelector {
             let emojiList: (string | GuildEmoji)[] = customEmojisList.random(numCustomEmojis);
             emojiList.concat(this.fallbackEmojis.slice(0, numFillerEmojis));
 
-            return this.setEmojisFromListToVote(voteEmbed, emojiList, answers);
+            return this.setEmojisFromListToVote(voteEmbed, emojiList, answers, pollID);
         }
     }
 
-    private static setEmojisFromListToVote<T extends (string | GuildEmoji)[]>(voteEmbed: MessageEmbed, emojiList: T, answers: string[]) {
+    private static setEmojisFromListToVote<T extends (string | GuildEmoji)[]>(voteEmbed: MessageEmbed, emojiList: T, answers: string[], pollID: string) {
         let optionCount = answers.length;
         let emojiDescription = "";
         
@@ -120,7 +120,7 @@ export default class EmojiSelector {
 
             currRow.addComponents(
                 new MessageButton()
-                .setCustomId(`voteButton${currentEmoji}`)
+                .setCustomId(`voteButton-${pollID}-${i}`)
                 .setEmoji(currentEmoji)
                 .setStyle("PRIMARY")
             );

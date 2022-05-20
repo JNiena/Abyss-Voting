@@ -1,4 +1,5 @@
 import { ButtonInteraction } from "discord.js";
+import { MongoClient } from "mongodb";
 
 /**
  * if maxChanges is 0, then maxVotes takes precedence
@@ -8,6 +9,8 @@ import { ButtonInteraction } from "discord.js";
 export default class VoteExecutor {
 
     public static registerVote(interaction: ButtonInteraction) {
+        const [btnName, pollID, optionID] = interaction.customId.split("-");
+
         
     }
 }
