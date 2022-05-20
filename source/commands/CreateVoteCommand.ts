@@ -1,12 +1,15 @@
 import { ApplicationCommandRegistry, Command, RegisterBehavior } from "@sapphire/framework";
-import { CommandInteraction, Guild, GuildChannel, MessageEmbed, TextBasedChannel, TextChannel } from "discord.js";
+import { CommandInteraction, MessageActionRow, MessageActionRowComponent, MessageActionRowComponentResolvable, MessageEmbed, TextBasedChannel, TextChannel } from "discord.js";
 import { SlashCommandBuilder } from "@discordjs/builders";
-import { ChannelType } from "discord-api-types/v10";
+import { APIActionRowComponent, APIMessageActionRowComponent, ChannelType } from "discord-api-types/v10";
 
-import { EmojiSelector } from "../cmdutils/EmojiSelector";
+import EmojiSelector from "../cmdutils/EmojiSelector";
+import votesSettings from "../cmdutils/VotesCmdSettings";
+import DurationSerializer from "../cmdutils/DurationSerializer";
+import VoteExpirationExecutor from "../cmdutils/VoteExpirationExecutor";
+import moment from "moment";
 
-
-export class CreateVoteCommand extends Command {
+export default class CreateVoteCommand extends Command {
 
 	public constructor(context: Command.Context, options: Command.Options) {
 		super(context, {
@@ -16,7 +19,7 @@ export class CreateVoteCommand extends Command {
 		});
 	}
 
-	public override registerApplicationCommands(registry: ApplicationCommandRegistry) {
+	public registerApplicationCommands(registry: ApplicationCommandRegistry) {
 		const builder = new SlashCommandBuilder()
 			.setName(this.name)
 			.setDescription("Creates a new vote")
@@ -35,8 +38,10 @@ export class CreateVoteCommand extends Command {
 					.setRequired(false))
 			.addStringOption(option =>
 				option.setName("emoji-mode")
-					.setDescription("the category of emojis used in the poll")
-					.addChoices({name: "Numbers", value: "Numbers"}, {name: "Random Emojis", value: "Random Emojis"}, {name: "Custom Emojis", value: "Custom Emojis"})
+					.setDescription("the type of emojis that should be used in this poll")
+					.addChoices({name: "Numbers", value: "Numbers"},
+								{name: "Random Emojis", value: "Random Emojis"},
+								{name: "Custom Emojis", value: "Custom Emojis"})
 					.setRequired(false))
 			.addBooleanOption(option =>
 				option.setName("show-chart")
@@ -44,7 +49,7 @@ export class CreateVoteCommand extends Command {
 					.setRequired(false))
 			.addStringOption(option =>
 				option.setName("duration")
-					.setDescription("amount of time after which this poll should expire")
+					.setDescription("the amount of time after which this poll should expire")
 					.setRequired(false))
 			.addNumberOption(option =>
 				option.setName("max-changes")
@@ -69,32 +74,59 @@ export class CreateVoteCommand extends Command {
 
 		const answerList = answers.split("|");
 
-		if (answerList.length <= 1) {
-			await interaction.reply({content: "You need more than 1 option!", ephemeral: true});
-			return;
-		}
-		else if (answerList.length > 24) {
-			await interaction.reply({content: "You have too many options!", ephemeral: true});
-			return;
-		}
+		await interaction.deferReply({ephemeral: true});
 
 		if (!channel && interaction.channel) {
 			channel = interaction.channel;
 		}
 
-		await interaction.deferReply({ephemeral: true});
-
-		let voteEmbed = new MessageEmbed()
+		try {
+			let voteEmbed = new MessageEmbed()
 			.setColor("#0099ff")
 			.setTitle(title)
-			.addField("Total Votes", "1")
 			.setTimestamp();
 
-		voteEmbed = EmojiSelector.addEmojisToVote(interaction, voteEmbed, answerList, emojiMode);
+			let voteDuration: moment.Duration | null = null;
 
-		await interaction.editReply({content: "Vote created successfully!"});
+			let components: MessageActionRow<MessageActionRowComponent, MessageActionRowComponentResolvable, APIActionRowComponent<APIMessageActionRowComponent>>[] = [];
 
-		return channel?.send({embeds: [voteEmbed]});
+			({voteEmbed, components} = EmojiSelector.addEmojisToVote(voteEmbed, answerList, emojiMode));
+
+			if (duration) {
+				voteDuration = DurationSerializer.getParsedDuration(duration);
+				VoteExpirationExecutor.setTimeoutToClose(voteDuration.asMilliseconds());
+
+				let currTimeStamp = moment();
+				const futureTimeStamp = currTimeStamp.add(voteDuration);
+
+				voteEmbed.addField("Will end in", `<t:${futureTimeStamp.unix()}:R>`);
+				voteEmbed.addField("Total Votes", "0");
+			}
+			else {
+				voteEmbed.addField("Total Votes", "0");
+			}
+
+			await interaction.editReply({content: "Vote created successfully!"});
+			
+			return channel?.send({embeds: [voteEmbed], components: components}).then(message => {
+				votesSettings.set(message.id, {
+					title: title,
+					answers: answerList,
+					channel: channel,
+					emojiMode: emojiMode,
+					showChart: showChart,
+					duration: duration,
+					maxChanges: maxChanges,
+					maxVotes: maxVotes
+				});
+			});
+		}
+		catch (e) {
+			if (e instanceof Error) {
+				interaction.editReply({content: e.message});
+				return;
+			}
+		}
 	}
 
 }
