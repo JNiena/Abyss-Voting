@@ -11,11 +11,11 @@ export default class VoteButtonHandler extends InteractionHandler {
 
 	public async run(interaction: ButtonInteraction) {
 		try {
-			VoteExecutor.registerVote(interaction);
+			VoteExecutor.registerVoteAction(interaction);
 		}
 		catch (e) {
 			if (e instanceof Error) {
-				interaction.editReply({content: e.message});
+				interaction.reply({ content: e.message });
 				return;
 			}
 		}

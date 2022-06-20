@@ -41,6 +41,7 @@ export default class EmojiSelector {
         "⏰"
     ];
 
+    private static removeVoteEmoji = "🗑️";
 
     public static addEmojisToVote(voteEmbed: MessageEmbed, answers: string[], emojiMode: string | null, pollID: string) {        
         let components: MessageActionRow<MessageActionRowComponent, MessageActionRowComponentResolvable, APIActionRowComponent<APIMessageActionRowComponent>>[] = [];
@@ -126,6 +127,19 @@ export default class EmojiSelector {
             );
 
         }
+
+        if (currRow.components.length >= 5) {
+            components.push(currRow);
+
+            currRow = new MessageActionRow();
+        }
+
+        currRow.addComponents(
+            new MessageButton()
+            .setCustomId(`voteButton-${pollID}-removeVote`)
+            .setEmoji(EmojiSelector.removeVoteEmoji)
+            .setStyle("DANGER")
+        );
 
         components.push(currRow);
 

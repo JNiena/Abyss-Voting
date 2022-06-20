@@ -3,7 +3,7 @@ import { TextBasedChannel } from "discord.js";
 export type VoteCmdSettings = {
     title: string,
     options: string[],
-    channel: TextBasedChannel | null,
+    channel: string | null | undefined,
     emojiMode: string | null,
     showChart: boolean | null,
     duration: string | null,
@@ -23,7 +23,6 @@ export type Poll = {
     id: string,
     userID: string,
     settings: VoteCmdSettings,
-    options: string[],
     votes: Vote[],
     messageID: string,
     createdAt: string

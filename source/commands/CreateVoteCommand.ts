@@ -71,18 +71,26 @@ export default class CreateVoteCommand extends Command {
 		const emojiMode = interaction.options.getString("emoji-mode");
 		const showChart = interaction.options.getBoolean("show-chart");
 		const duration = interaction.options.getString("duration");
-		const maxChanges = interaction.options.getNumber("max-changes");
-		const maxVotes = interaction.options.getNumber("max-votes");
+		let maxChanges = interaction.options.getNumber("max-changes");
+		let maxVotes = interaction.options.getNumber("max-votes");
 
 		const pollId = uniqid();
 
+		const maxOptionLength = 50;
+
 		const answerList = answers.split("|");
+
+		for (const answer of answerList) {
+			if (answer.length > maxOptionLength) {
+				return interaction.reply({content: `The option \`${answer}\` exceeds the maximum length of \`${maxOptionLength}\` chars!`, ephemeral: true});
+			}
+		}
 
 		await interaction.deferReply({ephemeral: true});
 
-		if (!channel && interaction.channel) {
-			channel = interaction.channel;
-		}
+		if (!channel && interaction.channel) channel = interaction.channel;
+		if (!maxChanges) maxChanges = 0;
+		if (!maxVotes) maxVotes = 1;
 
 		try {
 			let voteEmbed = new MessageEmbed()
@@ -97,12 +105,10 @@ export default class CreateVoteCommand extends Command {
 			({voteEmbed, components} = EmojiSelector.addEmojisToVote(voteEmbed, answerList, emojiMode, pollId));
 
 			if (duration) {
-				voteDuration = DurationSerializer.getParsedDuration(duration);
-				VoteExpirationExecutor.setTimeoutToClose(voteDuration.asMilliseconds());
-
 				let currTimeStamp = moment();
+				voteDuration = DurationSerializer.getParsedDuration(duration);
 				const futureTimeStamp = currTimeStamp.add(voteDuration);
-
+				
 				voteEmbed.addField("Will end in", `<t:${futureTimeStamp.unix()}:R>`);
 				voteEmbed.addField("Total Votes", "0");
 			}
@@ -116,7 +122,7 @@ export default class CreateVoteCommand extends Command {
 				const voteCmdSettings: VoteCmdSettings = {
 					title: title,
 					options: answerList,
-					channel: channel,
+					channel: channel?.id,
 					duration: duration,
 					emojiMode: emojiMode,
 					showChart: showChart,
@@ -131,11 +137,12 @@ export default class CreateVoteCommand extends Command {
 					settings: voteCmdSettings,
 					createdAt: moment().toDate().toUTCString(),
 					messageID: message.id,
-					options: answerList,
 					votes: []
 				}
 
-				const insertResult = await VoteDBUtils.insertOne(pollData);
+				const insertResult = await VoteDBUtils.insertOne<Poll>(pollData);
+
+				if (voteDuration) VoteExpirationExecutor.setTimeoutToClose(voteDuration.asMilliseconds(), pollId, message);
 			});
 		}
 		catch (e) {
