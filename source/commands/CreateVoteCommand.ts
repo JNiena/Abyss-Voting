@@ -11,7 +11,6 @@ import moment from "moment";
 import { Poll, VoteCmdSettings } from "../cmdutils/Poll";
 import { VoteDBUtils } from "../cmdutils/VoteDBUtils";
 import PollsCache from "../cmdutils/PollsCache";
-import CloseVoteCommand from "./CloseVoteCommand";
 
 export default class CreateVoteCommand extends Command {
 
