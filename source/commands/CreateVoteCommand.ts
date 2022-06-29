@@ -10,6 +10,8 @@ import VoteExpirationExecutor from "../cmdutils/VoteExpirationExecutor";
 import moment from "moment";
 import { Poll, VoteCmdSettings } from "../cmdutils/Poll";
 import { VoteDBUtils } from "../cmdutils/VoteDBUtils";
+import PollsCache from "../cmdutils/PollsCache";
+import CloseVoteCommand from "./CloseVoteCommand";
 
 export default class CreateVoteCommand extends Command {
 
@@ -141,6 +143,11 @@ export default class CreateVoteCommand extends Command {
 				}
 
 				const insertResult = await VoteDBUtils.insertOne<Poll>(pollData);
+				
+				PollsCache[title] = {
+					pollID: pollId,
+					messageID: message.id
+				};
 
 				if (voteDuration) VoteExpirationExecutor.setTimeoutToClose(voteDuration.asMilliseconds(), pollId, message);
 			});

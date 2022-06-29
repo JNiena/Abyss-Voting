@@ -20,9 +20,14 @@ export default class VoteExpirationExecutor {
     }
 
     public static async closePoll(pollID: string, message: Message) {
+        if (!pollID || !message) return;
+        
         const poll = await VoteDBUtils.findOne<Poll>({
             id: pollID
         });
+
+        console.log("Fetched Poll: " + poll);
+        
         
         if (!poll) return;
 
@@ -47,8 +52,6 @@ export default class VoteExpirationExecutor {
 
         const winnersOptionIds = this.getWinners(poll.votes, poll.settings.options.length);
         let winnersResults = "";
-
-        console.log("Winners: " + winnersOptionIds);
         
         for (const winnerOptionId of winnersOptionIds) {
             winnersResults += `${poll.settings.options[winnerOptionId]}, `
